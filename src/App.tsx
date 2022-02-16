@@ -109,7 +109,6 @@ function BoxSettings({
           href="#"
           onClick={(e) => {
             e.preventDefault();
-            deleteBox(i);
           }}
         >
           Delete
