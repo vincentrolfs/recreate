@@ -1,4 +1,4 @@
-export const SCALE = 50;
+export const SCALE = 30;
 export type LinkableNumber = {
   value: number;
   isLinked: boolean;

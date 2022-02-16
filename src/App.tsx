@@ -30,8 +30,8 @@ export default function App() {
         <div>
           <input
             type="range"
-            min="10"
-            max="300"
+            min="3"
+            max="150"
             value={globalValue}
             onChange={(e) => setGlobalValue(e.target.value)}
           />

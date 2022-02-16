@@ -7,7 +7,7 @@ import {
   rp,
   SCALE,
 } from "./types";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import distinctColors from "distinct-colors";
 
 const COLORS = distinctColors({ count: 21 });
@@ -74,6 +74,8 @@ export function useBoxes(): [
     newBoxes.splice(i, 1);
     setBoxes(newBoxes);
   };
+
+  useEffect(() => addBox(), []);
 
   return [boxes, addBox, updateBox, deleteBox];
 }
