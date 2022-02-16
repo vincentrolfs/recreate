@@ -1,102 +1,8 @@
 import React, { useRef, useState } from "react";
-import { Canvas, useFrame } from "@react-three/fiber";
-import { Color } from "three";
-
-const SCALE = 50;
-
-type LinkableNumber = {
-  value: number;
-  isLinked: boolean;
-};
-
-type Box = {
-  position: [x: LinkableNumber, y: LinkableNumber, z: LinkableNumber];
-  size: [width: LinkableNumber, height: LinkableNumber, depth: LinkableNumber];
-  color: string;
-};
-
-type PartialBox = {
-  position?: [x?: LinkableNumber, y?: LinkableNumber, z?: LinkableNumber];
-  size?: [
-    width?: LinkableNumber,
-    height?: LinkableNumber,
-    depth?: LinkableNumber
-  ];
-};
-
-const boxKeys: ("size" | "position")[] = ["size", "position"];
-
-function computeBoxValues(
-  key: "position" | "size",
-  box: Box,
-  globalValue: number
-): [number, number, number] {
-  return box[key].map(
-    (linkableNum) =>
-      (linkableNum.isLinked ? globalValue : linkableNum.value) / SCALE
-  ) as [number, number, number];
-}
-
-function r(): LinkableNumber {
-  return {
-    value: Math.round(3 * SCALE * (Math.random() * 2 - 1)),
-    isLinked: false,
-  };
-}
-
-function rp(): LinkableNumber {
-  return {
-    value: Math.round(3 * SCALE * Math.random()),
-    isLinked: false,
-  };
-}
-
-function useBoxes(): [
-  Box[],
-  () => void,
-  (i: number, update: PartialBox) => void,
-  (i: number) => void
-] {
-  const [boxes, setBoxes] = useState<Box[]>([]);
-
-  const addBox = () => {
-    const colorNames = Object.keys(Color.NAMES);
-
-    setBoxes([
-      ...boxes,
-      {
-        position: [r(), r(), { value: 0, isLinked: false }],
-        size: [rp(), rp(), rp()],
-        color: colorNames[Math.floor(Math.random() * colorNames.length)],
-      },
-    ]);
-  };
-
-  const updateBox = (i: number, update: PartialBox) => {
-    const newBoxes = [...boxes];
-    newBoxes[i] = {
-      position: [...newBoxes[i].position],
-      size: [...newBoxes[i].size],
-      color: newBoxes[i].color,
-    };
-
-    boxKeys.forEach((key) =>
-      update[key]?.forEach((value, index) => {
-        newBoxes[i][key][index] = value ?? newBoxes[i][key][index];
-      })
-    );
-
-    setBoxes(newBoxes);
-  };
-
-  const deleteBox = (i: number) => {
-    const newBoxes = [...boxes];
-    newBoxes.splice(i, 1);
-    setBoxes(newBoxes);
-  };
-
-  return [boxes, addBox, updateBox, deleteBox];
-}
+import { Canvas, useThree } from "@react-three/fiber";
+import { Box, PartialBox } from "./types";
+import { computeBoxValues, useBoxes } from "./boxes";
+import { DragControls } from "three/examples/jsm/controls/DragControls";
 
 export default function App() {
   const [boxes, addBox, updateBox, deleteBox] = useBoxes();
@@ -104,15 +10,6 @@ export default function App() {
 
   return (
     <>
-      <div className="settings">
-        <h3>Global value</h3>
-        <input
-          type="number"
-          value={globalValue}
-          onChange={(e) => setGlobalValue(e.target.value)}
-        />
-      </div>
-
       <div className="canvasWrapper">
         <Canvas>
           <ambientLight intensity={0.5} />
@@ -126,7 +23,23 @@ export default function App() {
       </div>
 
       <div className="settings bottom">
-        <button onClick={addBox}>Add box</button>
+        <h1>Recreate Prototype version 0.0.1</h1>
+
+        <h3>Global value</h3>
+
+        <div>
+          <input
+            type="range"
+            min="10"
+            max="300"
+            value={globalValue}
+            onChange={(e) => setGlobalValue(e.target.value)}
+          />
+        </div>
+
+        <div style={{ marginTop: "16px" }}>
+          <button onClick={addBox}>Add box</button>
+        </div>
 
         {boxes.map((box, i) => (
           <BoxSettings
@@ -149,21 +62,28 @@ function ThreeBox({ box, globalValue }: ThreeBoxProps) {
   const ref = useRef<any>();
   const [hovered, hover] = useState(false);
   const [clicked, click] = useState(false);
+  const {
+    camera,
+    gl: { domElement },
+  } = useThree();
 
-  useFrame((state, delta) => ref.current && (ref.current.rotation.x += delta));
+  if (ref.current) {
+    new DragControls([ref.current], camera, domElement);
+  }
 
   return (
-    <mesh
-      position={computeBoxValues("position", box, globalValue)}
-      ref={ref}
-      scale={clicked ? 1.5 : 1}
-      onClick={() => click(!clicked)}
-      onPointerOver={() => hover(true)}
-      onPointerOut={() => hover(false)}
-    >
-      <boxGeometry args={computeBoxValues("size", box, globalValue)} />
-      <meshStandardMaterial color={hovered ? "hotpink" : box.color} />
-    </mesh>
+    <>
+      <mesh
+        position={computeBoxValues("position", box, globalValue)}
+        ref={ref}
+        onClick={() => click(!clicked)}
+        onPointerOver={() => hover(true)}
+        onPointerOut={() => hover(false)}
+      >
+        <boxGeometry args={computeBoxValues("size", box, globalValue)} />
+        <meshStandardMaterial color={box.color} />
+      </mesh>
+    </>
   );
 }
 
@@ -199,46 +119,44 @@ function BoxSettings({
       </h3>
 
       <div className="oneBox">
-        {boxKeys.map((key) => (
-          <div key={key}>
-            <h4>{key}</h4>
-            {[0, 1, 2].map((l) => (
-              <LinkableInput
-                key={key + l}
-                globalValue={globalValue}
-                value={box[key][l].value}
-                isLinked={box[key][l].isLinked}
-                onSetLink={(isLinked) => {
-                  const newArray: PartialBox["size"] = [
-                    undefined,
-                    undefined,
-                    undefined,
-                  ];
-                  newArray[l] = {
-                    value: box[key][l].value,
-                    isLinked,
-                  };
+        <div>
+          <h4>Size</h4>
+          {[0, 1, 2].map((l) => (
+            <LinkableInput
+              key={l}
+              globalValue={globalValue}
+              value={box.size[l].value}
+              isLinked={box.size[l].isLinked}
+              onSetLink={(isLinked) => {
+                const newArray: PartialBox["size"] = [
+                  undefined,
+                  undefined,
+                  undefined,
+                ];
+                newArray[l] = {
+                  value: box.size[l].value,
+                  isLinked,
+                };
 
-                  updateBox(i, { [key]: newArray });
-                }}
-                onChange={(value) => {
-                  const newArray: PartialBox["size"] = [
-                    undefined,
-                    undefined,
-                    undefined,
-                  ];
-                  newArray[l] = {
-                    value,
-                    isLinked: box[key][l].isLinked,
-                  };
+                updateBox(i, { size: newArray });
+              }}
+              onChange={(value) => {
+                const newArray: PartialBox["size"] = [
+                  undefined,
+                  undefined,
+                  undefined,
+                ];
+                newArray[l] = {
+                  value,
+                  isLinked: box.size[l].isLinked,
+                };
 
-                  updateBox(i, { [key]: newArray });
-                }}
-              />
-            ))}
-            <br />
-          </div>
-        ))}
+                updateBox(i, { size: newArray });
+              }}
+            />
+          ))}
+          <br />
+        </div>
       </div>
     </>
   );
