@@ -1,0 +1,2 @@
+*{font-family:monospace}#root,body,html{background:#fff;margin:0;min-height:100vh;padding:0;width:100%}#root{display:flex;flex-direction:column}.settings{background:#000;color:#fff;padding:16px}.canvasWrapper{height:70vh}.settings.bottom{flex-grow:1}.settings.bottom a{color:#fff;font-size:8pt;font-weight:400}.oneBox{display:flex}.oneBox h4{-webkit-margin-before:0;margin-block-start:0}.oneBox div{margin-left:16px}.color{display:inline-block;height:10px;width:10px}
+/*# sourceMappingURL=main.4d01def0.css.map*/
