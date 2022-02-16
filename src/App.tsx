@@ -1,4 +1,4 @@
-import React, { useRef, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { Canvas, useThree } from "@react-three/fiber";
 import { Box, PartialBox } from "./types";
 import { computeBoxValues, useBoxes } from "./boxes";
@@ -72,18 +72,16 @@ function ThreeBox({ box, globalValue }: ThreeBoxProps) {
   }
 
   return (
-    <>
-      <mesh
-        position={computeBoxValues("position", box, globalValue)}
-        ref={ref}
-        onClick={() => click(!clicked)}
-        onPointerOver={() => hover(true)}
-        onPointerOut={() => hover(false)}
-      >
-        <boxGeometry args={computeBoxValues("size", box, globalValue)} />
-        <meshStandardMaterial color={box.color} />
-      </mesh>
-    </>
+    <mesh
+      position={computeBoxValues("position", box, globalValue)}
+      ref={ref}
+      onClick={() => click(!clicked)}
+      onPointerOver={() => hover(true)}
+      onPointerOut={() => hover(false)}
+    >
+      <boxGeometry args={computeBoxValues("size", box, globalValue)} />
+      <meshStandardMaterial color={box.color} />
+    </mesh>
   );
 }
 
